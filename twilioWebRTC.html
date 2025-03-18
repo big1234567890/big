@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Twilio WebRTC + SIP</title>
+    <script src="https://sdk.twilio.com/js/client/v1.13/twilio.min.js"></script>
+    <script>
+        let device;
+
+        async function setupTwilioDevice() {
+            try {
+                console.log("Fetching Twilio Token...");
+
+                // Fetch Twilio Token from your Twilio Function
+                const response = await fetch("https://YOUR-TWILIO-FUNCTION-URL/generatetoken");
+                const data = await response.json();
+                const token = data.token;
+
+                console.log("Twilio Token Received. Initializing Device...");
+
+                // Initialize Twilio WebRTC Device
+                device = new Twilio.Device(token, {
+                    codecPreferences: ["opus", "pcmu"],
+                    enableRingingState: true
+                });
+
+                device.on("ready", () => {
+                    console.log("Twilio Device Ready");
+                    document.getElementById("status").innerText = "✅ Ready to make calls";
+                });
+
+                device.on("error", (error) => {
+                    console.error("Twilio Device Error:", error.message);
+                    document.getElementById("status").innerText = "❌ Error: " + error.message;
+                });
+
+                device.on("incoming", (conn) => {
+                    console.log("Incoming Call from:", conn.parameters.From);
+                    document.getElementById("status").innerText = "📞 Incoming Call...";
+
+                    document.getElementById("answerButton").style.display = "block";
+                    document.getElementById("rejectButton").style.display = "block";
+
+                    document.getElementById("answerButton").onclick = () => {
+                        conn.accept();
+                        console.log("Call Answered");
+                        document.getElementById("status").innerText = "📞 On Call";
+                    };
+
+                    document.getElementById("rejectButton").onclick = () => {
+                        conn.reject();
+                        console.log("Call Rejected");
+                        document.getElementById("status").innerText = "📵 Call Rejected";
+                    };
+                });
+
+                device.on("disconnect", () => {
+                    console.log("Call Ended");
+                    document.getElementById("status").innerText = "✅ Ready to make calls";
+                    document.getElementById("answerButton").style.display = "none";
+                    document.getElementById("rejectButton").style.display = "none";
+                });
+
+            } catch (error) {
+                console.error("Error:", error);
+                document.getElementById("status").innerText = "❌ Error Fetching Token";
+            }
+        }
+
+        function makeCall() {
+            const to = document.getElementById("callTo").value;
+            if (!to) {
+                alert("Enter a SIP address or number to call!");
+                return;
+            }
+
+            const params = { To: `sip:${to}@bitsinglass.sip.twilio.com` };
+            device.connect(params);
+            console.log("Calling:", params.To);
+            document.getElementById("status").innerText = "📞 Calling...";
+        }
+
+        function hangUpCall() {
+            if (device) {
+                device.disconnectAll();
+                console.log("Call Ended");
+                document.getElementById("status").innerText = "✅ Ready to make calls";
+            }
+        }
+
+        window.onload = setupTwilioDevice;
+    </script>
+</head>
+<body>
+    <h2>Twilio WebRTC + SIP</h2>
+    <p id="status">🔄 Initializing...</p>
+    <input type="text" id="callTo" placeholder="Enter SIP Username" />
+    <button onclick="makeCall()">Call</button>
+    <button onclick="hangUpCall()">Hang Up</button>
+    <button id="answerButton" style="display:none;">Answer</button>
+    <button id="rejectButton" style="display:none;">Reject</button>
+</body>
+</html>

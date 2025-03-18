@@ -7,7 +7,7 @@
         let device;
 
         // Fetch Twilio Access Token
-      async function fetchToken() {
+     async function fetchToken() {
     try {
         console.log("🔄 Fetching Twilio Token...");
 
@@ -18,83 +18,51 @@
 
         if (!response.ok) throw new Error(`HTTP Error! Status: ${response.status}`);
 
-        const text = await response.text();  // Get raw response
-        console.log("🔍 Raw API Response:", text);
+        const data = await response.json();  // ✅ Parse JSON response
+        console.log("✅ Token Received:", data);
 
-        const dataArray = JSON.parse(text);  // Convert to JS array
-        if (!Array.isArray(dataArray) || dataArray.length === 0) throw new Error("Invalid API response format");
+        const token = data.token;  // ✅ Extract the correct token value
 
-        const parsedData = JSON.parse(dataArray[0]);  // Fix nested JSON issue
-        console.log("✅ Parsed API Response:", parsedData);
+        if (!token) throw new Error("Token not found in response");
 
-        if (!parsedData.token) throw new Error("Token not found in response");
-
-        return parsedData.token;
+        return token;
     } catch (error) {
         console.error("❌ Error Fetching Token:", error);
-        document.getElementById("status").innerText = "❌ Error Fetching Token";
+        document.getElementById("status").innerText = "❌ Error Fetching Token: " + error.message;
         return null;
     }
 }
 
+
         // Setup Twilio WebRTC Device
         async function setupTwilioDevice() {
-            try {
-                const token = await fetchToken();
-                if (!token) {
-                    document.getElementById("status").innerText = "❌ Error Fetching Token";
-                    return;
-                }
+    try {
+        const token = await fetchToken();
+        if (!token) return;
 
-                device = new Twilio.Device(token, {
-                    codecPreferences: ["opus", "pcmu"],
-                    enableRingingState: true
-                });
+        console.log("🔄 Initializing Twilio Device...");
 
-                device.on("ready", () => {
-                    console.log("✅ Twilio Device Ready");
-                    document.getElementById("status").innerText = "✅ Ready to make calls";
-                });
+        device = new Twilio.Device(token, {
+            codecPreferences: ["opus", "pcmu"],
+            enableRingingState: true
+        });
 
-                device.on("error", (error) => {
-                    console.error("❌ Twilio Device Error:", error.message);
-                    document.getElementById("status").innerText = "❌ Error: " + error.message;
-                });
+        device.on("ready", () => {
+            console.log("✅ Twilio Device Ready");
+            document.getElementById("status").innerText = "✅ Ready to make calls";
+        });
 
-                device.on("incoming", (conn) => {
-                    console.log("📞 Incoming Call from:", conn.parameters.From);
-                    document.getElementById("status").innerText = "📞 Incoming Call...";
+        device.on("error", (error) => {
+            console.error("❌ Twilio Device Error:", error.message);
+            document.getElementById("status").innerText = "❌ Error: " + error.message;
+        });
 
-                    document.getElementById("answerButton").style.display = "block";
-                    document.getElementById("rejectButton").style.display = "block";
-
-                    document.getElementById("answerButton").onclick = () => {
-                        conn.accept();
-                        console.log("✅ Call Answered");
-                        document.getElementById("status").innerText = "📞 On Call";
-                    };
-
-                    document.getElementById("rejectButton").onclick = () => {
-                        conn.reject();
-                        console.log("❌ Call Rejected");
-                        document.getElementById("status").innerText = "📵 Call Rejected";
-                    };
-                });
-
-                device.on("disconnect", () => {
-                    console.log("🔴 Call Ended");
-                    document.getElementById("status").innerText = "✅ Ready to make calls";
-                    document.getElementById("answerButton").style.display = "none";
-                    document.getElementById("rejectButton").style.display = "none";
-                });
-
-            } catch (error) {
-                console.error("❌ Error:", error);
-                document.getElementById("status").innerText = "❌ Error Fetching Token";
-            }
-        }
-
-        function makeCall() {
+    } catch (error) {
+        console.error("❌ Setup Error:", error);
+        document.getElementById("status").innerText = "❌ Error Initializing Device";
+    }
+}
+     function makeCall() {
             const to = document.getElementById("callTo").value;
             if (!to) {
                 alert("Enter a SIP address or number to call!");

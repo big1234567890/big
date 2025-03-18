@@ -11,7 +11,7 @@
                 console.log("Fetching Twilio Token...");
 
                 // Fetch Twilio Token from your Twilio Function
-                const response = await fetch("https://YOUR-TWILIO-FUNCTION-URL/generatetoken");
+                const response = await fetch("https://bigappmarket-dev.appiancloud.com/suite/webapi/generatetoken");
                 const data = await response.json();
                 const token = data.token;
 
@@ -73,7 +73,7 @@
                 return;
             }
 
-            const params = { To: `sip:${to}@bitsinglass.sip.twilio.com` };
+            const params = { To: `sip:big@bitsinglass.sip.twilio.com` };
             device.connect(params);
             console.log("Calling:", params.To);
             document.getElementById("status").innerText = "📞 Calling...";

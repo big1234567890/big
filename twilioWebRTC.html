@@ -32,17 +32,15 @@
         return null;
     }
 }
-        // Run on Page Load
-window.onload = setupTwilioDevice;
-
-
         // Setup Twilio WebRTC Device
         async function setupTwilioDevice() {
     try {
+        console.log("🔄 Fetching Twilio Token...");
         const token = await fetchToken();
-        if (!token) return;
 
-        console.log("🔄 Initializing Twilio Device...");
+        if (!token) throw new Error("❌ No token received!");
+
+        console.log("✅ Extracted Token:", token);  // Debug log
 
         device = new Twilio.Device(token, {
             codecPreferences: ["opus", "pcmu"],
@@ -64,6 +62,9 @@ window.onload = setupTwilioDevice;
         document.getElementById("status").innerText = "❌ Error Initializing Device";
     }
 }
+
+       
+
      function makeCall() {
             const to = document.getElementById("callTo").value;
             if (!to) {

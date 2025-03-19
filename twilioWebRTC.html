@@ -88,14 +88,26 @@
                 document.getElementById("status").innerText = "✅ Ready to make calls";
             }
         }
+document.getElementById("startButton").addEventListener("click", async () => {
+    console.log("🔄 Requesting microphone access...");
+    
+    try {
+        await navigator.mediaDevices.getUserMedia({ audio: true }); // Request mic permission
+        console.log("🎤 Microphone access granted");
+        setupTwilioDevice(); // Now setup Twilio
+    } catch (error) {
+        console.error("❌ Microphone access denied:", error);
+        document.getElementById("status").innerText = "❌ Microphone access denied!";
+    }
+});
 
-        window.onload = setupTwilioDevice;
     </script>
 </head>
 <body>
     <h2>Twilio WebRTC + SIP</h2>
     <p id="status">🔄 Initializing...</p>
     <input type="text" id="callTo" placeholder="Enter SIP Username" />
+    <button id="startButton">Start Calling</button>
     <button onclick="makeCall()">Call</button>
     <button onclick="hangUpCall()">Hang Up</button>
     <button id="answerButton" style="display:none;">Answer</button>

@@ -65,33 +65,7 @@
                 document.getElementById("status").innerText = "❌ Error Initializing Device";
             }
         }
-        device.on("incoming", (connection) => {
-                    console.log("📞 Incoming Call...");
-                    document.getElementById("status").innerText = "📞 Incoming Call...";
-
-                    // Store the incoming call connection
-                    incomingConnection = connection;
-
-                    // Show the Answer & Reject buttons
-                    document.getElementById("answerButton").style.display = "inline";
-                    document.getElementById("rejectButton").style.display = "inline";
-
-                    // Attach event listeners to buttons
-                    document.getElementById("answerButton").onclick = () => answerCall();
-                    document.getElementById("rejectButton").onclick = () => rejectCall();
-                });
-
-                device.on("error", (error) => {
-                    console.error("❌ Twilio Device Error:", error.message);
-                    document.getElementById("status").innerText = "❌ Error: " + error.message;
-                });
-
-            } catch (error) {
-                console.error("❌ Setup Error:", error);
-                document.getElementById("status").innerText = "❌ Error Initializing Device";
-            }
-        }
-
+        
 
         document.addEventListener("DOMContentLoaded", () => {
             document.getElementById("startButton").addEventListener("click", async () => {

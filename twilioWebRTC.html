@@ -65,7 +65,6 @@
                 document.getElementById("status").innerText = "❌ Error Initializing Device";
             }
         }
-        
 
         document.addEventListener("DOMContentLoaded", () => {
             document.getElementById("startButton").addEventListener("click", async () => {
@@ -89,7 +88,7 @@
                 return;
             }
 
-            const params = { To: `sip:big@bitsinglass.sip.twilio.com` };
+            const params = { To: sip:big@bitsinglass.sip.twilio.com };
             device.connect(params);
             console.log("📞 Calling:", params.To);
             document.getElementById("status").innerText = "📞 Calling...";

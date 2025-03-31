@@ -91,19 +91,19 @@
                 }
             });
         });
+          function makeCall() {
+    const to = document.getElementById("callTo").value;
+    if (!to) {
+        alert("Enter a phone number or SIP address to call!");
+        return;
+    }
 
-        function makeCall() {
-            const to = document.getElementById("callTo").value;
-            if (!to) {
-                alert("Enter a SIP address or number to call!");
-                return;
-            }
+    const params = { To: to }; // Can be a mobile number or SIP user
+    device.connect(params);
+    console.log("📞 Calling:", params.To);
+    document.getElementById("status").innerText = "📞 Calling...";
+}
 
-            const params = { To: `sip:big@bitsinglass.sip.twilio.com` };
-            device.connect(params);
-            console.log("📞 Calling:", params.To);
-            document.getElementById("status").innerText = "📞 Calling...";
-        }
 
         function hangUpCall() {
             if (device) {

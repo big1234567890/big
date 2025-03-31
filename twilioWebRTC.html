@@ -91,18 +91,51 @@
                 }
             });
         });
-          function makeCall() {
-    const to = document.getElementById("callTo").value;
+         function makeCall() {
+    if (!device) {
+        console.error("❌ Twilio Device is not initialized.");
+        alert("Twilio is not ready yet. Please click 'Start Calling' first.");
+        return;
+    }
+
+    const to = document.getElementById("callTo").value.trim();
     if (!to) {
         alert("Enter a phone number or SIP address to call!");
         return;
     }
 
-    const params = { To: to }; // Can be a mobile number or SIP user
-    device.connect(params);
+    // Format the destination (Add SIP prefix if needed)
+    const callTo = to.includes("@") ? `sip:${to}` : to;
+    const params = { To: callTo };
+
     console.log("📞 Calling:", params.To);
+    
+    const connection = device.connect(params);
+    if (!connection) {
+        console.error("❌ Connection failed.");
+        document.getElementById("status").innerText = "❌ Call Failed!";
+        return;
+    }
+
     document.getElementById("status").innerText = "📞 Calling...";
+    
+    // Listen for connection status
+    connection.on("accept", () => {
+        console.log("✅ Call Connected");
+        document.getElementById("status").innerText = "✅ Call Connected";
+    });
+
+    connection.on("disconnect", () => {
+        console.log("🔴 Call Ended");
+        document.getElementById("status").innerText = "✅ Ready to make calls";
+    });
+
+    connection.on("error", (error) => {
+        console.error("❌ Call Error:", error.message);
+        document.getElementById("status").innerText = `❌ Call Error: ${error.message}`;
+    });
 }
+
 
 
         function hangUpCall() {

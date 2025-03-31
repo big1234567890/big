@@ -8,18 +8,16 @@
     <h2>Twilio WebRTC + SIP</h2>
     <p id="status">🔄 Initializing...</p>
 
-    <!-- New Button to Start the WebRTC Setup -->
     <button id="startButton">Start Calling</button>
-
     <input type="text" id="callTo" placeholder="Enter SIP Username" />
     <button onclick="makeCall()">Call</button>
     <button onclick="hangUpCall()">Hang Up</button>
     <button id="answerButton" style="display:none;">Answer</button>
     <button id="rejectButton" style="display:none;">Reject</button>
 
-    <!-- Move Script to End -->
     <script>
         let device;
+        let incomingConnection = null; // Store incoming call
 
         async function fetchToken() {
             try {
@@ -40,10 +38,7 @@
             try {
                 console.log("🔄 Fetching Twilio Token...");
                 const token = await fetchToken();
-
                 if (!token) throw new Error("❌ No token received!");
-
-                console.log("✅ Extracted Token:", token);
 
                 device = new Twilio.Device(token, {
                     codecPreferences: ["opus", "pcmu"],
@@ -53,6 +48,22 @@
                 device.on("ready", () => {
                     console.log("✅ Twilio Device Ready");
                     document.getElementById("status").innerText = "✅ Ready to make calls";
+                });
+
+                device.on("incoming", (connection) => {
+                    console.log("📞 Incoming Call...");
+                    document.getElementById("status").innerText = "📞 Incoming Call...";
+
+                    // Store the incoming call connection
+                    incomingConnection = connection;
+
+                    // Show the Answer & Reject buttons
+                    document.getElementById("answerButton").style.display = "inline";
+                    document.getElementById("rejectButton").style.display = "inline";
+
+                    // Attach event listeners to buttons
+                    document.getElementById("answerButton").onclick = () => answerCall();
+                    document.getElementById("rejectButton").onclick = () => rejectCall();
                 });
 
                 device.on("error", (error) => {
@@ -71,9 +82,9 @@
                 console.log("🔄 Requesting microphone access...");
 
                 try {
-                    await navigator.mediaDevices.getUserMedia({ audio: true }); // Request mic permission
+                    await navigator.mediaDevices.getUserMedia({ audio: true });
                     console.log("🎤 Microphone access granted");
-                    setupTwilioDevice(); // Now setup Twilio
+                    setupTwilioDevice();
                 } catch (error) {
                     console.error("❌ Microphone access denied:", error);
                     document.getElementById("status").innerText = "❌ Microphone access denied!";
@@ -99,6 +110,30 @@
                 device.disconnectAll();
                 console.log("🔴 Call Ended");
                 document.getElementById("status").innerText = "✅ Ready to make calls";
+            }
+        }
+
+        function answerCall() {
+            if (incomingConnection) {
+                console.log("✅ Call Answered");
+                document.getElementById("status").innerText = "✅ Call in Progress...";
+                incomingConnection.accept();
+
+                // Hide Answer & Reject buttons after answering
+                document.getElementById("answerButton").style.display = "none";
+                document.getElementById("rejectButton").style.display = "none";
+            }
+        }
+
+        function rejectCall() {
+            if (incomingConnection) {
+                console.log("❌ Call Rejected");
+                document.getElementById("status").innerText = "✅ Ready to receive calls";
+                incomingConnection.reject();
+
+                // Hide Answer & Reject buttons after rejecting
+                document.getElementById("answerButton").style.display = "none";
+                document.getElementById("rejectButton").style.display = "none";
             }
         }
     </script>

@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Twilio WebRTC + SIP</title>
+    <title>Twilio WebRTC + SIP & Phone</title>
     <script src="https://sdk.twilio.com/js/client/v1.13/twilio.min.js"></script>
 </head>
 <body>
-    <h2>Twilio WebRTC + SIP</h2>
+    <h2>Twilio WebRTC + SIP & Phone</h2>
     <p id="status">🔄 Initializing...</p>
 
     <button id="startButton">Start Calling</button>
-    <input type="text" id="callTo" placeholder="Enter SIP Username" />
+    <input type="text" id="callTo" placeholder="Enter SIP Address or Phone No." />
     <button onclick="makeCall()">Call</button>
     <button onclick="hangUpCall()">Hang Up</button>
     <button id="answerButton" style="display:none;">Answer</button>
@@ -91,20 +91,53 @@
                 }
             });
         });
-     function makeCall() {
-            const to = document.getElementById("callTo").value;
+
+        function makeCall() {
+            const to = document.getElementById("callTo").value.trim();
+
             if (!to) {
-                alert("Enter a SIP address or number to call!");
+                alert("Enter a SIP address or phone number to call!");
                 return;
             }
 
-            const params = { To: sip:big@bitsinglass.sip.twilio.com };
-            device.connect(params);
+            if (!device) {
+                console.error("❌ Twilio Device not initialized.");
+                document.getElementById("status").innerText = "❌ Device not ready!";
+                return;
+            }
+
+            let params = {};
+            if (to.includes("@")) {
+                params = { To: `sip:${to}` }; // SIP call
+            } else {
+                params = { To: to }; // Regular phone number call
+            }
+
             console.log("📞 Calling:", params.To);
-            document.getElementById("status").innerText = "📞 Calling...";
+
+            try {
+                const connection = device.connect({ params });
+
+                connection.on("accept", () => {
+                    console.log("✅ Call Connected");
+                    document.getElementById("status").innerText = "✅ Call Connected";
+                });
+
+                connection.on("disconnect", () => {
+                    console.log("🔴 Call Disconnected");
+                    document.getElementById("status").innerText = "✅ Ready to make calls";
+                });
+
+                connection.on("error", (error) => {
+                    console.error("❌ Call Error:", error);
+                    document.getElementById("status").innerText = "❌ Call Failed!";
+                });
+
+            } catch (error) {
+                console.error("❌ Call Error:", error);
+                document.getElementById("status").innerText = "❌ Call Failed!";
+            }
         }
-
-
 
         function hangUpCall() {
             if (device) {

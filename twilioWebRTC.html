@@ -92,52 +92,17 @@
             });
         });
      function makeCall() {
-    const to = document.getElementById("callTo").value.trim();
+            const to = document.getElementById("callTo").value;
+            if (!to) {
+                alert("Enter a SIP address or number to call!");
+                return;
+            }
 
-    if (!to) {
-        alert("Enter a phone number or SIP address to call!");
-        return;
-    }
-
-    if (!device) {
-        console.error("❌ Twilio Device not initialized.");
-        document.getElementById("status").innerText = "❌ Device not ready!";
-        return;
-    }
-
-    let params = {};
-    if (to.includes("@")) {
-        params = { To: `sip:${to}` };  // Format SIP calls properly
-    } else {
-        params = { To: to };  // Handle regular phone number calls
-    }
-
-    console.log("📞 Attempting to call:", params.To);
-
-    try {
-        const connection = device.connect({ params });
-
-        connection.on("accept", () => {
-            console.log("✅ Call Connected");
-            document.getElementById("status").innerText = "✅ Call Connected";
-        });
-
-        connection.on("disconnect", () => {
-            console.log("🔴 Call Disconnected");
-            document.getElementById("status").innerText = "✅ Ready to make calls";
-        });
-
-        connection.on("error", (error) => {
-            console.error("❌ Call Error:", error);
-            document.getElementById("status").innerText = "❌ Call Failed!";
-        });
-
-    } catch (error) {
-        console.error("❌ Call Error:", error);
-        document.getElementById("status").innerText = "❌ Call Failed!";
-    }
-}
-
+            const params = { To: sip:big@bitsinglass.sip.twilio.com };
+            device.connect(params);
+            console.log("📞 Calling:", params.To);
+            document.getElementById("status").innerText = "📞 Calling...";
+        }
 
 
 
@@ -175,4 +140,3 @@
     </script>
 </body>
 </html>
-

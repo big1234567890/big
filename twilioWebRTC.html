@@ -9,9 +9,9 @@
     <p id="status">🔄 Initializing...</p>
 
     <button id="startButton">Start Calling</button>
-    <input type="text" id="callTo" placeholder="Enter Phone No. or SIP Address" />
-    <button id="callButton">Call</button>
-    <button id="hangupButton">Hang Up</button>
+    <input type="text" id="callTo" placeholder="Enter SIP Username" />
+    <button onclick="makeCall()">Call</button>
+    <button onclick="hangUpCall()">Hang Up</button>
     <button id="answerButton" style="display:none;">Answer</button>
     <button id="rejectButton" style="display:none;">Reject</button>
 
@@ -77,74 +77,78 @@
             }
         }
 
-        document.getElementById("startButton").addEventListener("click", async () => {
-            console.log("🔄 Requesting microphone access...");
+        document.addEventListener("DOMContentLoaded", () => {
+            document.getElementById("startButton").addEventListener("click", async () => {
+                console.log("🔄 Requesting microphone access...");
 
-            try {
-                await navigator.mediaDevices.getUserMedia({ audio: true });
-                console.log("🎤 Microphone access granted");
-                setupTwilioDevice();
-            } catch (error) {
-                console.error("❌ Microphone access denied:", error);
-                document.getElementById("status").innerText = "❌ Microphone access denied!";
-            }
+                try {
+                    await navigator.mediaDevices.getUserMedia({ audio: true });
+                    console.log("🎤 Microphone access granted");
+                    setupTwilioDevice();
+                } catch (error) {
+                    console.error("❌ Microphone access denied:", error);
+                    document.getElementById("status").innerText = "❌ Microphone access denied!";
+                }
+            });
+        });
+     function makeCall() {
+    const to = document.getElementById("callTo").value.trim();
+
+    if (!to) {
+        alert("Enter a phone number or SIP address to call!");
+        return;
+    }
+
+    if (!device) {
+        console.error("❌ Twilio Device not initialized.");
+        document.getElementById("status").innerText = "❌ Device not ready!";
+        return;
+    }
+
+    // Determine if the call is to SIP or a phone number
+    let params = {};
+    if (to.includes("@")) {
+        params = { To: `sip:${to}` };
+    } else {
+        params = { To: to };
+    }
+
+    console.log("📞 Attempting to call:", params.To);
+
+    try {
+        const connection = device.connect({ params });
+
+        connection.on("accept", () => {
+            console.log("✅ Call Connected");
+            document.getElementById("status").innerText = "✅ Call Connected";
         });
 
-        document.getElementById("callButton").addEventListener("click", () => {
-            const to = document.getElementById("callTo").value.trim();
-
-            if (!to) {
-                alert("Enter a phone number or SIP address to call!");
-                return;
-            }
-
-            if (!device) {
-                console.error("❌ Twilio Device not initialized.");
-                document.getElementById("status").innerText = "❌ Device not ready!";
-                return;
-            }
-
-            // Determine if the input is a SIP address or a phone number
-            let params = {};
-            if (to.includes("@")) {
-                params = { To: `sip:${to}` }; // Format SIP calls properly
-            } else {
-                params = { To: to }; // Handle regular phone number calls
-            }
-
-            console.log("📞 Attempting to call:", params.To);
-
-            try {
-                const connection = device.connect(params);
-
-                connection.on("accept", () => {
-                    console.log("✅ Call Connected");
-                    document.getElementById("status").innerText = "✅ Call Connected";
-                });
-
-                connection.on("disconnect", () => {
-                    console.log("🔴 Call Disconnected");
-                    document.getElementById("status").innerText = "✅ Ready to make calls";
-                });
-
-                connection.on("error", (error) => {
-                    console.error("❌ Call Error:", error);
-                    document.getElementById("status").innerText = "❌ Call Failed!";
-                });
-
-            } catch (error) {
-                console.error("❌ Call Error:", error);
-                document.getElementById("status").innerText = "❌ Call Failed!";
-            }
+        connection.on("disconnect", () => {
+            console.log("🔴 Call Disconnected");
+            document.getElementById("status").innerText = "✅ Ready to make calls";
         });
 
-        document.getElementById("hangupButton").addEventListener("click", () => {
+        connection.on("error", (error) => {
+            console.error("❌ Call Error:", error);
+            document.getElementById("status").innerText = "❌ Call Failed!";
+        });
+
+    } catch (error) {
+        console.error("❌ Call Error:", error);
+        document.getElementById("status").innerText = "❌ Call Failed!";
+    }
+}
+
+
+
+
+        function hangUpCall() {
             if (device) {
                 device.disconnectAll();
                 console.log("🔴 Call Ended");
                 document.getElementById("status").innerText = "✅ Ready to make calls";
             }
-        });
+        }
 
         function answerCall() {
             if (incomingConnection) {

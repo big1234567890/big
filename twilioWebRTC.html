@@ -91,53 +91,49 @@
                 }
             });
         });
+function makeCall() {
+    const to = document.getElementById("callTo").value.trim();
 
-        function makeCall() {
-            const to = document.getElementById("callTo").value.trim();
+    if (!to) {
+        alert("Enter a SIP address or phone number to call!");
+        return;
+    }
 
-            if (!to) {
-                alert("Enter a SIP address or phone number to call!");
-                return;
-            }
+    if (!device) {
+        console.error("❌ Twilio Device not initialized.");
+        document.getElementById("status").innerText = "❌ Device not ready!";
+        return;
+    }
 
-            if (!device) {
-                console.error("❌ Twilio Device not initialized.");
-                document.getElementById("status").innerText = "❌ Device not ready!";
-                return;
-            }
+    let params = { To: to }; // Make sure this is passed
 
-            let params = {};
-            if (to.includes("@")) {
-                params = { To: `sip:${to}` }; // SIP call
-            } else {
-                params = { To: to }; // Regular phone number call
-            }
+    console.log("📞 Calling:", params.To);
 
-            console.log("📞 Calling:", params.To);
+    try {
+        const connection = device.connect(params);
 
-            try {
-                const connection = device.connect({ params });
+        connection.on("accept", () => {
+            console.log("✅ Call Connected");
+            document.getElementById("status").innerText = "✅ Call Connected";
+        });
 
-                connection.on("accept", () => {
-                    console.log("✅ Call Connected");
-                    document.getElementById("status").innerText = "✅ Call Connected";
-                });
+        connection.on("disconnect", () => {
+            console.log("🔴 Call Disconnected");
+            document.getElementById("status").innerText = "✅ Ready to make calls";
+        });
 
-                connection.on("disconnect", () => {
-                    console.log("🔴 Call Disconnected");
-                    document.getElementById("status").innerText = "✅ Ready to make calls";
-                });
+        connection.on("error", (error) => {
+            console.error("❌ Call Error:", error);
+            document.getElementById("status").innerText = "❌ Call Failed!";
+        });
 
-                connection.on("error", (error) => {
-                    console.error("❌ Call Error:", error);
-                    document.getElementById("status").innerText = "❌ Call Failed!";
-                });
+    } catch (error) {
+        console.error("❌ Call Error:", error);
+        document.getElementById("status").innerText = "❌ Call Failed!";
+    }
+}
 
-            } catch (error) {
-                console.error("❌ Call Error:", error);
-                document.getElementById("status").innerText = "❌ Call Failed!";
-            }
-        }
+              
 
         function hangUpCall() {
             if (device) {

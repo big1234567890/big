@@ -91,11 +91,11 @@
                 }
             });
         });
-function makeCall() {
+        function makeCall() {
     const to = document.getElementById("callTo").value.trim();
 
     if (!to) {
-        alert("Enter a SIP address or phone number to call!");
+        alert("Enter a phone number to call!");
         return;
     }
 
@@ -105,12 +105,17 @@ function makeCall() {
         return;
     }
 
-    let params = { To: to }; // Make sure this is passed
+    if (to.includes("@")) {
+        alert("SIP addresses are not supported! Please enter a phone number.");
+        return;
+    }
+
+    let params = { To: to }; // Only phone numbers
 
     console.log("📞 Calling:", params.To);
 
     try {
-        const connection = device.connect(params);
+        const connection = device.connect(params); // Call only phone numbers
 
         connection.on("accept", () => {
             console.log("✅ Call Connected");
@@ -123,17 +128,16 @@ function makeCall() {
         });
 
         connection.on("error", (error) => {
-            console.error("❌ Call Error:", error);
+            console.error("❌ Call Error:", error.message);
             document.getElementById("status").innerText = "❌ Call Failed!";
         });
 
     } catch (error) {
-        console.error("❌ Call Error:", error);
+        console.error("❌ Call Error:", error.message);
         document.getElementById("status").innerText = "❌ Call Failed!";
     }
 }
 
-              
 
         function hangUpCall() {
             if (device) {

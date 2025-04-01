@@ -91,7 +91,7 @@
                 }
             });
         });
-     document.getElementById("callButton").addEventListener("click", () => {
+     function makeCall() {
     const to = document.getElementById("callTo").value.trim();
 
     if (!to) {
@@ -105,18 +105,17 @@
         return;
     }
 
-    // Determine if the call is to SIP or a phone number
     let params = {};
     if (to.includes("@")) {
-        params.To = `sip:${to}`; // SIP Call
+        params = { To: `sip:${to}` };  // Format SIP calls properly
     } else {
-        params.To = to; // Mobile/Phone Number Call
+        params = { To: to };  // Handle regular phone number calls
     }
 
     console.log("📞 Attempting to call:", params.To);
 
     try {
-        const connection = device.connect(params); // ✅ FIXED: Removed extra `{}` wrapper
+        const connection = device.connect({ params });
 
         connection.on("accept", () => {
             console.log("✅ Call Connected");
@@ -137,8 +136,7 @@
         console.error("❌ Call Error:", error);
         document.getElementById("status").innerText = "❌ Call Failed!";
     }
-});
-
+}
 
 
 
@@ -177,3 +175,4 @@
     </script>
 </body>
 </html>
+

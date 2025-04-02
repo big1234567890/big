@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Microphone Access</title>
+</head>
+<body>
+    <h2>Microphone Access for Appian</h2>
+    <p id="status">🔄 Waiting for permission...</p>
+    <button onclick="requestMicAccess()">Enable Microphone</button>
+
+    <script>
+        async function requestMicAccess() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                document.getElementById("status").innerText = "✅ Microphone Access Granted!";
+                console.log("🎤 Microphone access granted:", stream);
+            } catch (error) {
+                document.getElementById("status").innerText = "❌ Microphone Access Denied!";
+                console.error("❌ Microphone access error:", error);
+            }
+        }
+    </script>
+</body>
+</html>

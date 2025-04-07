@@ -9,7 +9,7 @@
     <p id="status">🔄 Initializing...</p>
 
     <button id="startButton">Start Calling</button>
-    <input type="text" id="callTo" placeholder="Enter SIP Address or Phone No." />
+    <input type="text" id="callTo" placeholder="Enter Phone Number" />
     <button onclick="makeCall()">Call</button>
     <button onclick="hangUpCall()">Hang Up</button>
     <button id="answerButton" style="display:none;">Answer</button>
@@ -17,13 +17,12 @@
 
     <script>
         let device;
-        let incomingConnection = null; // Store incoming call
+        let incomingConnection = null;
 
         async function fetchToken() {
             try {
                 const response = await fetch('https://mahogany-dinosaur-3523.twil.io/token');
                 if (!response.ok) throw new Error("Failed to fetch token");
-
                 const data = await response.json();
                 console.log("✅ Extracted Token:", data.token);
                 return data.token;
@@ -35,153 +34,117 @@
         }
 
         async function setupTwilioDevice() {
+            const token = await fetchToken();
+            if (!token) return;
+
+            device = new Twilio.Device(token, {
+                codecPreferences: ["opus", "pcmu"],
+                enableRingingState: true
+            });
+
+            device.on("ready", () => {
+                console.log("✅ Twilio Device Ready");
+                document.getElementById("status").innerText = "✅ Ready to make/receive calls";
+            });
+
+            device.on("incoming", (connection) => {
+                console.log("📞 Incoming Call...");
+                document.getElementById("status").innerText = "📞 Incoming Call...";
+                incomingConnection = connection;
+
+                document.getElementById("answerButton").style.display = "inline";
+                document.getElementById("rejectButton").style.display = "inline";
+            });
+
+            device.on("error", (error) => {
+                console.error("❌ Twilio Device Error:", error.message);
+                document.getElementById("status").innerText = "❌ Error: " + error.message;
+            });
+        }
+
+        async function requestMicAndSetupDevice() {
             try {
-                console.log("🔄 Fetching Twilio Token...");
-                const token = await fetchToken();
-                if (!token) throw new Error("❌ No token received!");
-
-                device = new Twilio.Device(token, {
-                    codecPreferences: ["opus", "pcmu"],
-                    enableRingingState: true
-                });
-
-                device.on("ready", () => {
-                    console.log("✅ Twilio Device Ready");
-                    document.getElementById("status").innerText = "✅ Ready to make calls";
-                });
-
-                device.on("incoming", (connection) => {
-                    console.log("📞 Incoming Call...");
-                    document.getElementById("status").innerText = "📞 Incoming Call...";
-
-                    // Store the incoming call connection
-                    incomingConnection = connection;
-
-                    // Show the Answer & Reject buttons
-                    document.getElementById("answerButton").style.display = "inline";
-                    document.getElementById("rejectButton").style.display = "inline";
-
-                    // Attach event listeners to buttons
-                    document.getElementById("answerButton").onclick = () => answerCall();
-                    document.getElementById("rejectButton").onclick = () => rejectCall();
-                });
-
-                device.on("error", (error) => {
-                    console.error("❌ Twilio Device Error:", error.message);
-                    document.getElementById("status").innerText = "❌ Error: " + error.message;
-                });
-
+                console.log("🔄 Requesting microphone access...");
+                await navigator.mediaDevices.getUserMedia({ audio: true });
+                console.log("🎤 Microphone access granted");
+                await setupTwilioDevice();
             } catch (error) {
-                console.error("❌ Setup Error:", error);
-                document.getElementById("status").innerText = "❌ Error Initializing Device";
-            }
-        }
-        document.addEventListener("DOMContentLoaded", () => {
-             document.getElementById("startButton").addEventListener("click", async () => {
-                 console.log("🔄 Requesting microphone access...");
- 
-                 try {
-                     await navigator.mediaDevices.getUserMedia({ audio: true });
-                     console.log("🎤 Microphone access granted");
-                     setupTwilioDevice();
-                 } catch (error) {
-                     console.error("❌ Microphone access denied:", error);
-                     document.getElementById("status").innerText = "❌ Microphone access denied!";
-                 }
-             });
-         });
-
-        function makeCall() {
-    const to = document.getElementById("callTo").value.trim();
-
-    if (!to) {
-        alert("Enter a phone number to call!");
-        return;
-    }
-
-    if (!device) {
-        console.error("❌ Twilio Device not initialized.");
-        document.getElementById("status").innerText = "❌ Device not ready!";
-        return;
-    }
-
-    if (to.includes("@")) {
-        alert("SIP addresses are not supported! Please enter a phone number.");
-        return;
-    }
-
-    let params = { To: to }; // Only phone numbers
-
-    console.log("📞 Calling:", params.To);
-
-    try {
-        const connection = device.connect(params); // Call only phone numbers
-
-        connection.on("accept", () => {
-            console.log("✅ Call Connected");
-            document.getElementById("status").innerText = "✅ Call Connected";
-        });
-
-        connection.on("disconnect", () => {
-            console.log("🔴 Call Disconnected");
-            document.getElementById("status").innerText = "✅ Ready to make calls";
-        });
-
-        connection.on("error", (error) => {
-            console.error("❌ Call Error:", error.message);
-            document.getElementById("status").innerText = "❌ Call Failed!";
-        });
-
-    } catch (error) {
-        console.error("❌ Call Error:", error.message);
-        document.getElementById("status").innerText = "❌ Call Failed!";
-    }
-}
-
-
-        function hangUpCall() {
-            if (device) {
-                device.disconnectAll();
-                console.log("🔴 Call Ended");
-                document.getElementById("status").innerText = "✅ Ready to make calls";
+                console.error("❌ Microphone access denied:", error);
+                document.getElementById("status").innerText = "❌ Microphone access denied!";
             }
         }
 
-        function answerCall() {
+        document.getElementById("startButton").addEventListener("click", async () => {
+            await requestMicAndSetupDevice();
+        });
+
+        async function answerCall() {
+            await requestMicAndSetupDevice(); // Ensure mic and device are set up
+
             if (incomingConnection) {
                 console.log("✅ Call Answered");
                 document.getElementById("status").innerText = "✅ Call in Progress...";
                 incomingConnection.accept();
-
-                // Hide Answer & Reject buttons after answering
                 document.getElementById("answerButton").style.display = "none";
                 document.getElementById("rejectButton").style.display = "none";
             }
         }
-        document.addEventListener("DOMContentLoaded", () => {
-             document.getElementById("answerButton").addEventListener("click", async () => {
-                 console.log("🔄 Requesting microphone access...");
- 
-                 try {
-                     await navigator.mediaDevices.getUserMedia({ audio: true });
-                     console.log("🎤 Microphone access granted");
-                     setupTwilioDevice();
-                 } catch (error) {
-                     console.error("❌ Microphone access denied:", error);
-                     document.getElementById("status").innerText = "❌ Microphone access denied!";
-                 }
-             });
-         });
+
+        document.getElementById("answerButton").addEventListener("click", answerCall);
 
         function rejectCall() {
             if (incomingConnection) {
                 console.log("❌ Call Rejected");
                 document.getElementById("status").innerText = "✅ Ready to receive calls";
                 incomingConnection.reject();
-
-                // Hide Answer & Reject buttons after rejecting
                 document.getElementById("answerButton").style.display = "none";
                 document.getElementById("rejectButton").style.display = "none";
+            }
+        }
+
+        document.getElementById("rejectButton").addEventListener("click", rejectCall);
+
+        function makeCall() {
+            const to = document.getElementById("callTo").value.trim();
+
+            if (!to) {
+                alert("Enter a phone number to call!");
+                return;
+            }
+
+            if (!device) {
+                console.error("❌ Twilio Device not initialized.");
+                document.getElementById("status").innerText = "❌ Device not ready!";
+                return;
+            }
+
+            let params = { To: to };
+
+            console.log("📞 Calling:", params.To);
+
+            const connection = device.connect(params);
+
+            connection.on("accept", () => {
+                console.log("✅ Call Connected");
+                document.getElementById("status").innerText = "✅ Call Connected";
+            });
+
+            connection.on("disconnect", () => {
+                console.log("🔴 Call Disconnected");
+                document.getElementById("status").innerText = "✅ Ready to make/receive calls";
+            });
+
+            connection.on("error", (error) => {
+                console.error("❌ Call Error:", error.message);
+                document.getElementById("status").innerText = "❌ Call Failed!";
+            });
+        }
+
+        function hangUpCall() {
+            if (device) {
+                device.disconnectAll();
+                console.log("🔴 Call Ended");
+                document.getElementById("status").innerText = "✅ Ready to make/receive calls";
             }
         }
     </script>

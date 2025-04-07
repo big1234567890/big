@@ -12,7 +12,7 @@
     <input type="text" id="callTo" placeholder="Enter Phone No." />
     <button onclick="makeCall()">Call</button>
     <button onclick="hangUpCall()">Hang Up</button>
-    <button id="answerButton" style="display:none;">Answer</button>
+    <button id="answerButton" style="display:inline;">Answer</button>
     <button id="rejectButton" style="display:none;">Reject</button>
 
     <script>
@@ -88,7 +88,7 @@
                 console.log("✅ Call Answered");
                 document.getElementById("status").innerText = "✅ Call in Progress...";
                 incomingConnection.accept();
-                document.getElementById("answerButton").style.display = "none";
+                document.getElementById("answerButton").style.display = "inline";
                 document.getElementById("rejectButton").style.display = "none";
             }
         });
@@ -98,7 +98,7 @@
                 console.log("❌ Call Rejected");
                 document.getElementById("status").innerText = "✅ Ready to receive calls";
                 incomingConnection.reject();
-                document.getElementById("answerButton").style.display = "none";
+                document.getElementById("answerButton").style.display = "inline";
                 document.getElementById("rejectButton").style.display = "none";
             }
         }

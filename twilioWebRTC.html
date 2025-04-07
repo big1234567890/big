@@ -76,6 +76,20 @@
                 document.getElementById("status").innerText = "❌ Error Initializing Device";
             }
         }
+        document.addEventListener("DOMContentLoaded", () => {
+             document.getElementById("startButton").addEventListener("click", async () => {
+                 console.log("🔄 Requesting microphone access...");
+ 
+                 try {
+                     await navigator.mediaDevices.getUserMedia({ audio: true });
+                     console.log("🎤 Microphone access granted");
+                     setupTwilioDevice();
+                 } catch (error) {
+                     console.error("❌ Microphone access denied:", error);
+                     document.getElementById("status").innerText = "❌ Microphone access denied!";
+                 }
+             });
+         });
 
         function makeCall() {
     const to = document.getElementById("callTo").value.trim();

@@ -158,6 +158,20 @@
                 document.getElementById("rejectButton").style.display = "none";
             }
         }
+        document.addEventListener("DOMContentLoaded", () => {
+             document.getElementById("answerButton").addEventListener("click", async () => {
+                 console.log("🔄 Requesting microphone access...");
+ 
+                 try {
+                     await navigator.mediaDevices.getUserMedia({ audio: true });
+                     console.log("🎤 Microphone access granted");
+                     setupTwilioDevice();
+                 } catch (error) {
+                     console.error("❌ Microphone access denied:", error);
+                     document.getElementById("status").innerText = "❌ Microphone access denied!";
+                 }
+             });
+         });
 
         function rejectCall() {
             if (incomingConnection) {

@@ -1,188 +1,175 @@
 <!DOCTYPE html>
- <html lang="en">
- <head>
-     <title>Twilio WebRTC + SIP & Phone</title>
-     <script src="https://sdk.twilio.com/js/client/v1.13/twilio.min.js"></script>
- </head>
- <body>
-     <h2>Twilio WebRTC + SIP & Phone</h2>
-     <p id="status">🔄 Initializing...</p>
- 
-     <button id="startButton">Generate Token</button>
-     <input type="text" id="callTo" placeholder="Enter Phone Number" />
-     <input type="text" id="callTo" placeholder="Enter Phone No." />
-     <button onclick="makeCall()">Call</button>
-     <button onclick="hangUpCall()">Hang Up</button>
-     <button id="answerButton" style="display:none;">Answer</button>
- @@ -34,37 +34,43 @@
-         }
- 
-         async function setupTwilioDevice() {
-             const token = await fetchToken();
-             if (!token) return;
- 
-             device = new Twilio.Device(token, {
-                 codecPreferences: ["opus", "pcmu"],
-                 enableRingingState: true
-             });
- 
-             device.on("ready", () => {
-                 console.log("✅ Twilio Device Ready");
-                 document.getElementById("status").innerText = "✅ Ready to make/receive calls";
-             });
- 
-             device.on("incoming", (connection) => {
-                 console.log("📞 Incoming Call...");
-                 document.getElementById("status").innerText = "📞 Incoming Call...";
-                 incomingConnection = connection;
- 
-                 document.getElementById("answerButton").style.display = "inline";
-                 document.getElementById("rejectButton").style.display = "inline";
-             });
- 
-             device.on("error", (error) => {
-                 console.error("❌ Twilio Device Error:", error.message);
-                 document.getElementById("status").innerText = "❌ Error: " + error.message;
-             });
-             try {
-                 console.log("🔄 Fetching Twilio Token...");
-                 const token = await fetchToken();
-                 if (!token) throw new Error("❌ No token received!");
- 
-                 device = new Twilio.Device(token, {
-                     codecPreferences: ["opus", "pcmu"],
-                     enableRingingState: true
-                 });
- 
-                 device.on("ready", () => {
-                     console.log("✅ Twilio Device Ready");
-                     document.getElementById("status").innerText = "✅ Ready to make/receive calls";
-                 });
- 
-                 device.on("incoming", (connection) => {
-                     console.log("📞 Incoming Call...");
-                     document.getElementById("status").innerText = "📞 Incoming Call...";
-                     incomingConnection = connection;
-                     document.getElementById("answerButton").style.display = "inline";
-                     document.getElementById("rejectButton").style.display = "inline";
-                 });
- 
-                 device.on("error", (error) => {
-                     console.error("❌ Twilio Device Error:", error.message);
-                     document.getElementById("status").innerText = "❌ Error: " + error.message;
-                 });
- 
-             } catch (error) {
-                 console.error("❌ Setup Error:", error);
-                 document.getElementById("status").innerText = "❌ Error Initializing Device";
-             }
-         }
- 
-         async function requestMicAndSetupDevice() {
-         async function initDeviceWithMic() {
-             console.log("🔄 Requesting microphone access...");
-             try {
-                 console.log("🔄 Requesting microphone access...");
-                 await navigator.mediaDevices.getUserMedia({ audio: true });
-                 console.log("🎤 Microphone access granted");
-                 await setupTwilioDevice();
- @@ -74,23 +80,18 @@
-             }
-         }
- 
-         document.getElementById("startButton").addEventListener("click", async () => {
-             await requestMicAndSetupDevice();
-         });
- 
-         async function answerCall() {
-             await requestMicAndSetupDevice(); // Ensure mic and device are set up
-         document.getElementById("startButton").addEventListener("click", initDeviceWithMic);
- 
-         document.getElementById("answerButton").addEventListener("click", async () => {
-             await initDeviceWithMic(); // Ensure mic access and token before answering
-             if (incomingConnection) {
-                 console.log("✅ Call Answered");
-                 document.getElementById("status").innerText = "✅ Call in Progress...";
-                 incomingConnection.accept();
-                 document.getElementById("answerButton").style.display = "none";
-                 document.getElementById("rejectButton").style.display = "none";
-             }
-         }
- 
-         document.getElementById("answerButton").addEventListener("click", answerCall);
-         });
- 
-         function rejectCall() {
-             if (incomingConnection) {
- @@ -102,11 +103,8 @@
-             }
-         }
- 
-         document.getElementById("rejectButton").addEventListener("click", rejectCall);
- 
-         function makeCall() {
-             const to = document.getElementById("callTo").value.trim();
- 
-             if (!to) {
-                 alert("Enter a phone number to call!");
-                 return;
- @@ -118,35 +116,44 @@
-                 return;
-             }
- 
-             if (to.includes("@")) {
-                 alert("SIP addresses are not supported! Please enter a phone number.");
-                 return;
-             }
- 
-             let params = { To: to };
- 
-             console.log("📞 Calling:", params.To);
-             try {
-                 const connection = device.connect(params);
-                 connection.on("accept", () => {
-                     console.log("✅ Call Connected");
-                     document.getElementById("status").innerText = "✅ Call Connected";
-                 });
- 
-                 connection.on("disconnect", () => {
-                     console.log("🔴 Call Disconnected");
-                     document.getElementById("status").innerText = "✅ Ready to make calls";
-                 });
- 
-                 connection.on("error", (error) => {
-                     console.error("❌ Call Error:", error.message);
-                     document.getElementById("status").innerText = "❌ Call Failed!";
-                 });
- 
-             const connection = device.connect(params);
- 
-             connection.on("accept", () => {
-                 console.log("✅ Call Connected");
-                 document.getElementById("status").innerText = "✅ Call Connected";
-             });
- 
-             connection.on("disconnect", () => {
-                 console.log("🔴 Call Disconnected");
-                 document.getElementById("status").innerText = "✅ Ready to make/receive calls";
-             });
- 
-             connection.on("error", (error) => {
-             } catch (error) {
-                 console.error("❌ Call Error:", error.message);
-                 document.getElementById("status").innerText = "❌ Call Failed!";
-             });
-             }
-         }
- 
-         function hangUpCall() {
-             if (device) {
-                 device.disconnectAll();
-                 console.log("🔴 Call Ended");
-                 document.getElementById("status").innerText = "✅ Ready to make/receive calls";
-                 document.getElementById("status").innerText = "✅ Ready to make calls";
-             }
-         }
-     </script>
- </body>
- </html>
+<html lang="en">
+<head>
+    <title>Twilio WebRTC + SIP & Phone</title>
+    <script src="https://sdk.twilio.com/js/client/v1.13/twilio.min.js"></script>
+</head>
+<body>
+    <h2>Twilio WebRTC + SIP & Phone</h2>
+    <p id="status">🔄 Initializing...</p>
+
+    <button id="startButton">Start Calling</button>
+    <input type="text" id="callTo" placeholder="Enter SIP Address or Phone No." />
+    <button onclick="makeCall()">Call</button>
+    <button onclick="hangUpCall()">Hang Up</button>
+    <button id="answerButton" style="display:none;">Answer</button>
+    <button id="rejectButton" style="display:none;">Reject</button>
+
+    <script>
+        let device;
+        let incomingConnection = null; // Store incoming call
+
+        async function fetchToken() {
+            try {
+                const response = await fetch('https://mahogany-dinosaur-3523.twil.io/token');
+                if (!response.ok) throw new Error("Failed to fetch token");
+
+                const data = await response.json();
+                console.log("✅ Extracted Token:", data.token);
+                return data.token;
+            } catch (error) {
+                console.error("❌ Error Fetching Token:", error);
+                document.getElementById("status").innerText = "❌ Token Fetch Failed!";
+                return null;
+            }
+        }
+
+        async function setupTwilioDevice() {
+            try {
+                console.log("🔄 Fetching Twilio Token...");
+                const token = await fetchToken();
+                if (!token) throw new Error("❌ No token received!");
+
+                device = new Twilio.Device(token, {
+                    codecPreferences: ["opus", "pcmu"],
+                    enableRingingState: true
+                });
+
+                device.on("ready", () => {
+                    console.log("✅ Twilio Device Ready");
+                    document.getElementById("status").innerText = "✅ Ready to make calls";
+                });
+
+                device.on("incoming", (connection) => {
+                    console.log("📞 Incoming Call...");
+                    document.getElementById("status").innerText = "📞 Incoming Call...";
+
+                    // Store the incoming call connection
+                    incomingConnection = connection;
+
+                    // Show the Answer & Reject buttons
+                    document.getElementById("answerButton").style.display = "inline";
+                    document.getElementById("rejectButton").style.display = "inline";
+
+                    // Attach event listeners to buttons
+                    document.getElementById("answerButton").onclick = () => answerCall();
+                    document.getElementById("rejectButton").onclick = () => rejectCall();
+                });
+
+                device.on("error", (error) => {
+                    console.error("❌ Twilio Device Error:", error.message);
+                    document.getElementById("status").innerText = "❌ Error: " + error.message;
+                });
+
+            } catch (error) {
+                console.error("❌ Setup Error:", error);
+                document.getElementById("status").innerText = "❌ Error Initializing Device";
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            document.getElementById("startButton").addEventListener("click", async () => {
+                console.log("🔄 Requesting microphone access...");
+
+                try {
+                    await navigator.mediaDevices.getUserMedia({ audio: true });
+                    console.log("🎤 Microphone access granted");
+                    setupTwilioDevice();
+                } catch (error) {
+                    console.error("❌ Microphone access denied:", error);
+                    document.getElementById("status").innerText = "❌ Microphone access denied!";
+                }
+            });
+        });
+        function makeCall() {
+    const to = document.getElementById("callTo").value.trim();
+
+    if (!to) {
+        alert("Enter a phone number to call!");
+        return;
+    }
+
+    if (!device) {
+        console.error("❌ Twilio Device not initialized.");
+        document.getElementById("status").innerText = "❌ Device not ready!";
+        return;
+    }
+
+    if (to.includes("@")) {
+        alert("SIP addresses are not supported! Please enter a phone number.");
+        return;
+    }
+
+    let params = { To: to }; // Only phone numbers
+
+    console.log("📞 Calling:", params.To);
+
+    try {
+        const connection = device.connect(params); // Call only phone numbers
+
+        connection.on("accept", () => {
+            console.log("✅ Call Connected");
+            document.getElementById("status").innerText = "✅ Call Connected";
+        });
+
+        connection.on("disconnect", () => {
+            console.log("🔴 Call Disconnected");
+            document.getElementById("status").innerText = "✅ Ready to make calls";
+        });
+
+        connection.on("error", (error) => {
+            console.error("❌ Call Error:", error.message);
+            document.getElementById("status").innerText = "❌ Call Failed!";
+        });
+
+    } catch (error) {
+        console.error("❌ Call Error:", error.message);
+        document.getElementById("status").innerText = "❌ Call Failed!";
+    }
+}
+
+
+        function hangUpCall() {
+            if (device) {
+                device.disconnectAll();
+                console.log("🔴 Call Ended");
+                document.getElementById("status").innerText = "✅ Ready to make calls";
+            }
+        }
+
+        function answerCall() {
+            if (incomingConnection) {
+                console.log("✅ Call Answered");
+                document.getElementById("status").innerText = "✅ Call in Progress...";
+                incomingConnection.accept();
+
+                // Hide Answer & Reject buttons after answering
+                document.getElementById("answerButton").style.display = "none";
+                document.getElementById("rejectButton").style.display = "none";
+            }
+        }
+
+        function rejectCall() {
+            if (incomingConnection) {
+                console.log("❌ Call Rejected");
+                document.getElementById("status").innerText = "✅ Ready to receive calls";
+                incomingConnection.reject();
+
+                // Hide Answer & Reject buttons after rejecting
+                document.getElementById("answerButton").style.display = "none";
+                document.getElementById("rejectButton").style.display = "none";
+            }
+        }
+    </script>
+</body>
+</html>
